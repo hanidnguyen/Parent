@@ -5,9 +5,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.ImageDecoder;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -24,8 +22,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
-import com.theartofdev.edmodo.cropper.CropImage;
-import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -55,6 +51,7 @@ public class Add_Child_Activity extends AppCompatActivity {
     private Bitmap image_bitmap;
     private AlertDialog alertDialogProfilePicture;
     private ActivityResultLauncher<Intent> camera_launcher;
+    private ActivityResultLauncher<Intent> gallery_launcher;
     private TextInputEditText input;
 
     @Override
@@ -67,6 +64,7 @@ public class Add_Child_Activity extends AppCompatActivity {
         setup_back_button();
 
         setup_camera_launcher();
+        setup_gallery_launcher();
         setup_submit_button();
         setup_camera_button();
     }
@@ -98,6 +96,31 @@ public class Add_Child_Activity extends AppCompatActivity {
                 }
         );
 
+    }
+
+    private void setup_gallery_launcher(){
+        gallery_launcher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        Intent data = result.getData();
+                        // do your operation from here....
+                        if (data != null && data.getData() != null) {
+                            Uri selectedImageUri = data.getData();
+                            try {
+                                image_bitmap = MediaStore.Images.Media.getBitmap(
+                                        this.getContentResolver(),
+                                        selectedImageUri);
+
+                                profilePicture.setImageBitmap(image_bitmap);
+                            }
+                            catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+        );
     }
 
     //Submit profile back to config, send back image and name of child
@@ -153,6 +176,9 @@ public class Add_Child_Activity extends AppCompatActivity {
         });
 
         gallery_icon.setOnClickListener(view -> {
+            //DEPRECATED ON OCT 7, 2023
+//            takePictureFromGallery();
+
             takePictureFromGallery();
             alertDialogProfilePicture.cancel();
             TextView text = findViewById(R.id.touch_add_picture);
@@ -160,12 +186,20 @@ public class Add_Child_Activity extends AppCompatActivity {
         });
     }
 
-    private void takePictureFromGallery() {
-        // start get image for cropping and then use the image in cropping activity
-        CropImage.activity()
-                .setGuidelines(CropImageView.Guidelines.ON)
-                .start(this);
+    private void takePictureFromGallery(){
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        gallery_launcher.launch(intent);
     }
+
+    //DEPRECATED SINCE OCT 07 2023
+//    private void takePictureFromGallery() {
+//        // start get image for cropping and then use the image in cropping activity
+//        CropImage.activity()
+//                .setGuidelines(CropImageView.Guidelines.ON)
+//                .start(this);
+//    }
 
     private void takePictureFromCamera() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -201,27 +235,27 @@ public class Add_Child_Activity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-            CropImage.ActivityResult result = CropImage.getActivityResult(data);
-            if (resultCode == RESULT_OK) {
-                Uri resultUri = result.getUri();
-                profilePicture.setImageURI(resultUri);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    try {
-                        image_bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(this.getContentResolver(), resultUri));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    try {
-                        image_bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), resultUri);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                assert image_bitmap!=null;
-            }
-        }
+        //CROP IMAGE DEPRECATED SINCE 0ct 07 2023
+        //if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+//            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+//            if (resultCode == RESULT_OK) {
+//                Uri resultUri = result.getUri();
+//                profilePicture.setImageURI(resultUri);
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+//                    try {
+//                        image_bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(this.getContentResolver(), resultUri));
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                } else {
+//                    try {
+//                        image_bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), resultUri);
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//                assert image_bitmap!=null;
+//            }
     }
 
 }

@@ -50,6 +50,8 @@ public class Edit_Child_Activity extends AppCompatActivity {
     private ImageView profilePicture;
     private AlertDialog alertDialogProfilePicture;
     private ActivityResultLauncher<Intent> camera_launcher;
+    private ActivityResultLauncher<Intent> gallery_launcher;
+    private Bitmap imageBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +61,7 @@ public class Edit_Child_Activity extends AppCompatActivity {
         setup_params();
 
         setup_camera_launcher();
+        setup_gallery_launcher();
 
         setup_back_button();
         setup_profile();
@@ -81,7 +84,7 @@ public class Edit_Child_Activity extends AppCompatActivity {
                         Intent data = result.getData();
                         if(data!=null){
                             Bundle extras = data.getExtras();
-                            Bitmap imageBitmap = (Bitmap) extras.get("data");
+                            imageBitmap = (Bitmap) extras.get("data");
                             String name = String.valueOf(input.getText());
                             image_path = saveToInternalStorage(imageBitmap,name);
                             loadImageFromStorage(image_path,name,profilePicture);
@@ -90,6 +93,31 @@ public class Edit_Child_Activity extends AppCompatActivity {
                 }
         );
 
+    }
+
+    private void setup_gallery_launcher(){
+        gallery_launcher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        Intent data = result.getData();
+                        // do your operation from here....
+                        if (data != null && data.getData() != null) {
+                            Uri selectedImageUri = data.getData();
+                            try {
+                                imageBitmap = MediaStore.Images.Media.getBitmap(
+                                        this.getContentResolver(),
+                                        selectedImageUri);
+
+                                profilePicture.setImageBitmap(imageBitmap);
+                            }
+                            catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+        );
     }
 
     private void setup_back_button() {
@@ -188,10 +216,15 @@ public class Edit_Child_Activity extends AppCompatActivity {
     }
 
     private void takePictureFromGallery() {
-        // start get image for cropping and then use the image in cropping activity
-        CropImage.activity()
-                .setGuidelines(CropImageView.Guidelines.ON)
-                .start(this);
+    //DEPRECATED SINCE OCT 07, 2023
+//        // start get image for cropping and then use the image in cropping activity
+//        CropImage.activity()
+//                .setGuidelines(CropImageView.Guidelines.ON)
+//                .start(this);
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        gallery_launcher.launch(intent);
     }
 
     private void takePictureFromCamera() {
@@ -244,29 +277,30 @@ public class Edit_Child_Activity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-            CropImage.ActivityResult result = CropImage.getActivityResult(data);
-            if (resultCode == RESULT_OK) {
-                Uri resultUri = result.getUri();
-                profilePicture.setImageURI(resultUri);
-                Bitmap imageBitmap = null;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    try {
-                        imageBitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(this.getContentResolver(), resultUri));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    try {
-                        imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), resultUri);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                assert imageBitmap!=null;
-                image_path = saveToInternalStorage(imageBitmap,String.valueOf(input.getText()));
-            }
-        }
+        //DEPRECATED SINCE OCT 07, 2023
+//        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+//            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+//            if (resultCode == RESULT_OK) {
+//                Uri resultUri = result.getUri();
+//                profilePicture.setImageURI(resultUri);
+//                Bitmap imageBitmap = null;
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+//                    try {
+//                        imageBitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(this.getContentResolver(), resultUri));
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                } else {
+//                    try {
+//                        imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), resultUri);
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//                assert imageBitmap!=null;
+//                image_path = saveToInternalStorage(imageBitmap,String.valueOf(input.getText()));
+//            }
+//        }
     }
 
     @Override
